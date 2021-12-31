@@ -60,7 +60,7 @@ func (p Paperless) GetCorrespondents() (CorrespondentList, error) {
 	var cl CorrespondentList
 
 	// Make the request
-	p.Root += "/correspondents"
+	p.Root += "/correspondents/"
 	u := fmt.Sprint(p)
 	results, err := p.MakeGetRequest(u)
 	if err != nil {

@@ -12,27 +12,31 @@ import (
 
 // Document is a struct representation of Paperless' /api/documents/<id> JSON response.
 type Document struct {
-	ID            int      `json:"id"`
-	Correspondent string   `json:"correspondent"`
-	Title         string   `json:"title"`
-	Content       string   `json:"content"`
-	FileType      string   `json:"file_type"`
-	Tags          []string `json:"tags"`
-	Checksum      string   `json:"checksum"`
-	Created       string   `json:"created"`
-	Modified      string   `json:"modified"`
-	Added         string   `json:"added"`
-	FileName      string   `json:"file_name"`
-	DownloadURL   string   `json:"download_url"`
-	ThumbnailURL  string   `json:"thumbnail_url"`
+	ID              int      `json:"id"`
+	CorrespondentID int      `json:"correspondent"`
+	Title           string   `json:"title"`
+	Content         string   `json:"content"`
+	FileType        string   `json:"file_type"`
+	TagIDs          []int    `json:"tags"`
+	Checksum        string   `json:"checksum"`
+	Created         string   `json:"created"`
+	Modified        string   `json:"modified"`
+	Added           string   `json:"added"`
+	FileName        string   `json:"file_name"`
+	DownloadURL     string   `json:"download_url"`
+	ThumbnailURL    string   `json:"thumbnail_url"`
+
+	// Extra metadata (needs to be manually hydrated)
+	Correspondent   string
+	Tags            []string
 }
 
 // How should we represent a Document object when trying to stringify it? This returns the struct as a string.
 func (d Document) String() string {
-	return fmt.Sprintf("ID: %v, Correspondent: %v, Title: %v, FileType: %v, "+
-		"Tags: %v, Checksum: %v, Created: %v, Modified: %v, Added: %v, FileName: "+
-		"%v, DownloadUrl: %v, ThumbnailUrl: %v", d.ID, d.Correspondent, d.Title,
-		d.FileType, d.Tags, d.Checksum, d.Created, d.Modified, d.Added,
+	return fmt.Sprintf("ID: %v, CorrespondentID: %v, Correspondent: %v, Title: %v, FileType: %v, "+
+	        "TagIDs: %v, Tags: %v, Checksum: %v, Created: %v, Modified: %v, Added: %v, FileName: "+
+		"%v, DownloadUrl: %v, ThumbnailUrl: %v", d.ID, d.CorrespondentID, d.Correspondent, d.Title,
+		d.FileType, d.TagIDs, d.Tags, d.Checksum, d.Created, d.Modified, d.Added,
 		d.FileName, d.DownloadURL, d.ThumbnailURL)
 }
 
@@ -66,14 +70,14 @@ func (p Paperless) GetDocument(s string, caseSensitive bool) (DocumentList, erro
 	for _, doc := range results {
 		json.Unmarshal([]byte(doc.Raw), &document)
 		// For each doc, resolve it's correspondents and doc
-		idList := []string{}
-		correspondentID := corrIDToName[urlToID(document.Correspondent)]
-		for _, tag := range document.Tags {
-			tagID := tagIDToName[urlToID(tag)]
-			idList = append(idList, tagID)
+		correspondentName := corrIDToName[document.CorrespondentID]
+		tagNameList := []string{}
+		for _, tag := range document.TagIDs {
+			tagName := tagIDToName[tag]
+			tagNameList = append(tagNameList, tagName)
 		}
-		document.Correspondent = correspondentID
-		document.Tags = idList
+		document.Correspondent = correspondentName
+		document.Tags = tagNameList
 		docList = append(docList, document)
 	}
 	return docList, nil
@@ -100,16 +104,15 @@ func (p Paperless) GetDocuments() (DocumentList, error) {
 	// Append results so far to DocumentList docList
 	for _, doc := range results {
 		json.Unmarshal([]byte(doc.Raw), &document)
-		// For each doc, resolve it's correspondent and tag names
-		// instead of Paperless API urls
-		idList := []string{}
-		correspondentID := corrIDToName[urlToID(document.Correspondent)]
-		for _, tag := range document.Tags {
-			tagID := tagIDToName[urlToID(tag)]
-			idList = append(idList, tagID)
+		// For each doc, resolve it's correspondents and doc
+		correspondentName := corrIDToName[document.CorrespondentID]
+		tagNameList := []string{}
+		for _, tag := range document.TagIDs {
+			tagName := tagIDToName[tag]
+			tagNameList = append(tagNameList, tagName)
 		}
-		document.Correspondent = correspondentID
-		document.Tags = idList
+		document.Correspondent = correspondentName
+		document.Tags = tagNameList
 		docList = append(docList, document)
 	}
 	return docList, nil
